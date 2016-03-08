@@ -436,13 +436,21 @@ namespace asgn5v1
 			scrnpts = new double[numpts,4];
 			setIdentity(ctrans,4,4);  //initialize transformation matrix to identity
             double imgX = sizeofimgX(vertices), imgY = sizeofimgY(vertices);
-            double sx = (ClientSize.Height / imgX) / 2, sy = (ClientSize.Height / imgY) / 2, mx = (ClientSize.Height / 2), my = (ClientSize.Height / 2);
+            double sx = (ClientSize.Height / imgX) / 2, sy = (ClientSize.Height / imgY) / 2, mx = (ClientSize.Width / 2), my = (ClientSize.Height / 2);
 
-            positionX(ctrans, sx);
-            positionY(ctrans, -sy);
-            scaleX(ctrans, ((-scrnpts[0, 0] * sx) + mx));
-            scaleY(ctrans, ((scrnpts[0, 1] * -sy) + my));
-			return true;
+            double[,] scaletest = createScaleMatrix(sx, sy, 4);
+            double[,] movetest = createMoveMatrix(mx, my, 4);
+            double[,] centertest = createMoveMatrix(-vertices[0, 0], -vertices[0, 1], 4);
+            double[,] fliptest = createFlipMatrix(2, 4); // flip over y
+            double[,] test = createMoveMatrix(0,0,4); // basic matrix
+
+            // testing
+            matrixMultiply(test, test, centertest);
+            matrixMultiply(test, test, fliptest);
+            matrixMultiply(test, test, scaletest);
+            matrixMultiply(ctrans, test, movetest);
+
+            return true;
 		} // end of GetNewData
 
         double sizeofimgX(double[,] A){
@@ -546,7 +554,7 @@ namespace asgn5v1
         /// <param name="scaleBy">Scale x by</param>
         void scaleX(double[,] A, double scaleXBy)
         {
-            A[3, 0] = scaleXBy;
+            A[0, 0] = scaleXBy;
         }
 
         /// <summary>
@@ -556,7 +564,7 @@ namespace asgn5v1
         /// <param name="scaleBy">Scale Y by</param>
         void scaleY(double[,] A, double scaleYBy)
         {
-            A[3, 1] = scaleYBy;
+            A[1, 1] = scaleYBy;
         }
 
         /// <summary>
@@ -564,9 +572,9 @@ namespace asgn5v1
         /// </summary>
         /// <param name="A">Matrix</param>
         /// <param name="position">position</param>
-        void positionX(double[,] A, double position)
+        void moveX(double[,] A, double position)
         {
-            A[0, 0] = position;
+            A[3, 0] = position;
         }
 
         /// <summary>
@@ -574,9 +582,116 @@ namespace asgn5v1
         /// </summary>
         /// <param name="A">Matrix</param>
         /// <param name="position">position</param>
-        void positionY(double[,] A, double position)
+        void moveY(double[,] A, double position)
         {
-            A[1, 1] = position;
+            A[3, 1] = position;
+        }
+
+        void flipX(double[,] A)
+        {
+            A[0, 0] *= -1;
+        }
+
+        void flipY(double[,] A)
+        {
+            A[1, 1] *= -1;
+        }
+
+        void flipZ(double[,] A)
+        {
+            A[2, 2] *= -1;
+        }
+
+        /// <summary>
+        /// Create scaling matrix.
+        /// </summary>
+        /// <param name="xSc">Scale x by</param>
+        /// <param name="ySc">Scale y by</param>
+        /// <param name="n">Size of matrix</param>
+        /// <returns>n*n matrix</returns>
+        double[,] createScaleMatrix(double xSc, double ySc, int n)
+        {
+            double[,] mout = new double[n,n];
+            for(int x = 0; x < n; x++)
+            {
+                for(int y = 0; y < n; y++) { mout[x, y] = 0; }
+                mout[x, x] = 1;
+            }
+            scaleX(mout, xSc);
+            scaleY(mout, ySc);
+            return mout;
+        }
+
+        /// <summary>
+        /// Create a moving matrix.
+        /// </summary>
+        /// <param name="mvx">Move x by</param>
+        /// <param name="mvy">Move y by</param>
+        /// <param name="n">Size of the matrix</param>
+        /// <returns>n*n matrix</returns>
+        double[,] createMoveMatrix(double mvx, double mvy, int n)
+        {
+            double[,] mout = new double[n, n];
+            for (int x = 0; x < n; x++)
+            {
+                for (int y = 0; y < n; y++) { mout[x, y] = 0; }
+                mout[x, x] = 1;
+            }
+            moveX(mout, mvx);
+            moveY(mout, mvy);
+            return mout;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="fx"></param>
+        /// <param name="flipxyz">1 for x, 2 for y, 3 for z</param>
+        /// <param name="n">Size of the matrix</param>
+        /// <returns></returns>
+        double[,] createFlipMatrix(double flipxyz, int n)
+        {
+            double[,] mout = new double[n, n];
+            for (int x = 0; x < n; x++)
+            {
+                for (int y = 0; y < n; y++) { mout[x, y] = 0; }
+                mout[x, x] = 1;
+            }
+            if(flipxyz == 1)
+            {
+                flipX(mout);
+            }else if(flipxyz == 2)
+            {
+                flipY(mout);
+            }
+            else
+            {
+                flipZ(mout);
+            }
+            return mout;
+        }
+
+        /// <summary>
+        /// Multiplies matrix
+        /// </summary>
+        /// <param name="mout">Output</param>
+        /// <param name="m1">Left matrix</param>
+        /// <param name="m2">Right matrix</param>
+        void matrixMultiply(double[,] mout, double[,] m1, double[,] m2)
+        {
+            double temp = 0;
+            for(int x = 0; x < 4; x++)
+            {
+                for(int y = 0; y < 4; y++)
+                {
+                    temp = 0;
+                    for (int i = 0; i < 4; i++)
+                    {
+                        temp += m1[x, i] * m2[i, y];
+                    }
+                    mout[x, y] = temp;
+                }
+            }
         }
 
 		private void Transformer_Load(object sender, System.EventArgs e)
