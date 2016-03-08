@@ -334,7 +334,7 @@ namespace asgn5v1
             Pen pen = new Pen(Color.White, 3);
 			double temp;
 			int k;
-
+            double firstPoint = 0;
             if (gooddata)
             {
                 //create the screen coordinates:
@@ -346,7 +346,9 @@ namespace asgn5v1
                     {
                         temp = 0.0d;
                         for (k = 0; k < 4; k++)
+                        {
                             temp += vertices[i, k] * ctrans[k, j];
+                        }
                         scrnpts[i, j] = temp;
                     }
                 }
@@ -433,8 +435,50 @@ namespace asgn5v1
 			}
 			scrnpts = new double[numpts,4];
 			setIdentity(ctrans,4,4);  //initialize transformation matrix to identity
+            double imgX = sizeofimgX(vertices), imgY = sizeofimgY(vertices);
+            double sx = (ClientSize.Height / imgX) / 2, sy = (ClientSize.Height / imgY) / 2, mx = (ClientSize.Height / 2), my = (ClientSize.Height / 2);
+
+            positionX(ctrans, sx);
+            positionY(ctrans, -sy);
+            scaleX(ctrans, ((-scrnpts[0, 0] * sx) + mx));
+            scaleY(ctrans, ((scrnpts[0, 1] * -sy) + my));
 			return true;
 		} // end of GetNewData
+
+        double sizeofimgX(double[,] A){
+            double size, min = double.MaxValue, max = 0;
+            for (int x = 0; x < A.GetLength(0); x++)
+            {
+                if (A[x, 0] < min)
+                {
+                    min = A[x, 0];
+                }
+                else if (A[x, 0] > max)
+                {
+                    max = A[x, 0];
+                }
+            }
+            size = max - min;
+            return size;
+        }
+
+        double sizeofimgY(double[,] A)
+        {
+            double size, min = double.MaxValue, max = 0;
+            for (int x = 0; x < A.GetLength(0); x++)
+            {
+                if (A[x, 1] < min)
+                {
+                    min = A[x, 1];
+                }
+                else if (A[x, 1] > max)
+                {
+                    max = A[x, 1];
+                }
+            }
+            size = max - min;
+            return size;
+        }
 
 		void DecodeCoords(ArrayList coorddata)
 		{
@@ -480,17 +524,60 @@ namespace asgn5v1
 				for (int j = 0; j < ncol; j++) A[i,j] = 0.0d;
 				A[i,i] = 1.0d;
 			}
-            // flip initially
-            //A[1, 1] = -1.0d; // flip over y
             // scale vertial by 1/2 height, scale horz by 1/2 width
 
             // double check that this is working on the lab computers
-            A[0, 0] = (Screen.PrimaryScreen.WorkingArea.Height / 2) / 20; // the numbers are being set wayyy too big
-            A[1, 1] = -(Screen.PrimaryScreen.WorkingArea.Height / 2) / 20; // flip over y
+
+            //positionX(A, (ClientSize.Height / 2)); // the numbers are being set wayyy too big
+            //positionY(ref A, -1); // flip over y
             // get the screen height and width, and divide over 2
-            A[3,0] = (( vertices[0,0] * ((Screen.PrimaryScreen.WorkingArea.Height / 2) / 20)) + (Screen.PrimaryScreen.WorkingArea.Height / 2)); // move in x
-            A[3,1] = (( vertices[0,1] * ((Screen.PrimaryScreen.WorkingArea.Height / 2) / 20)) + (Screen.PrimaryScreen.WorkingArea.Height / 2)); // move in y
+            //scaleX(A, (( vertices[0,0] * ((Screen.PrimaryScreen.WorkingArea.Height / 2) / 20)) + (Screen.PrimaryScreen.WorkingArea.Height / 2))); // move in x
+            //scaleY(A, (( vertices[0,1] * ((Screen.PrimaryScreen.WorkingArea.Height / 2) / 20)) + (Screen.PrimaryScreen.WorkingArea.Height / 2))); // move in y
+
+            //scaleX(A, ((Screen.PrimaryScreen.WorkingArea.Height / 2) * vertices[0, 0]) + (Screen.PrimaryScreen.WorkingArea.Height / 2));
+            //scaleY(A, (-(Screen.PrimaryScreen.WorkingArea.Height / 2) * vertices[0, 1]) + (Screen.PrimaryScreen.WorkingArea.Height / 2));
+
 		}// end of setIdentity
+
+        /// <summary>
+        /// Scales A[x,] matrix by
+        /// </summary>
+        /// <param name="A">Matrix</param>
+        /// <param name="scaleBy">Scale x by</param>
+        void scaleX(double[,] A, double scaleXBy)
+        {
+            A[3, 0] = scaleXBy;
+        }
+
+        /// <summary>
+        /// Scales A[,y] matrix by mutliplying scaleBy.
+        /// </summary>
+        /// <param name="A">Matrix</param>
+        /// <param name="scaleBy">Scale Y by</param>
+        void scaleY(double[,] A, double scaleYBy)
+        {
+            A[3, 1] = scaleYBy;
+        }
+
+        /// <summary>
+        /// Moves the x point by position.
+        /// </summary>
+        /// <param name="A">Matrix</param>
+        /// <param name="position">position</param>
+        void positionX(double[,] A, double position)
+        {
+            A[0, 0] = position;
+        }
+
+        /// <summary>
+        /// Moves the y point by position
+        /// </summary>
+        /// <param name="A">Matrix</param>
+        /// <param name="position">position</param>
+        void positionY(double[,] A, double position)
+        {
+            A[1, 1] = position;
+        }
 
 		private void Transformer_Load(object sender, System.EventArgs e)
 		{
