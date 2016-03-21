@@ -436,14 +436,15 @@ namespace asgn5v1
 			}
 			scrnpts = new double[numpts,4];
 			setIdentity(ctrans,4,4);  //initialize transformation matrix to identity
-            double imgX = sizeofimgX(vertices), imgY = sizeofimgY(vertices);
-            double sx = (ClientSize.Height / imgX) / 2, sy = (ClientSize.Height / imgY) / 2, mx = (ClientSize.Width / 2), my = (ClientSize.Height / 2);
+            double imgX = sizeofimgX(vertices), imgY = sizeofimgY(vertices), imgZ = sizeofimgZ(vertices);
+            double sx = (ClientSize.Height / imgX) / 2, sy = (ClientSize.Height / imgY) / 2, sz = (ClientSize.Height / imgZ) / 2,
+                mx = (ClientSize.Width / 2), my = (ClientSize.Height / 2), mz = (ClientSize.Height / 2);
 
-            double[,] scaletest = createScaleMatrix(sx, sy, 0, MATRIX_SIZE);
-            double[,] movetest = createMoveMatrix(mx, my, 0, MATRIX_SIZE);
-            double[,] centertest = createMoveMatrix(-vertices[0, 0], -vertices[0, 1], 0, MATRIX_SIZE);
+            double[,] scaletest = createScaleMatrix(sx, sy, sz, MATRIX_SIZE);
+            double[,] movetest = createMoveMatrix(mx, my, mz, MATRIX_SIZE);
+            double[,] centertest = createMoveMatrix(-vertices[0, 0], -vertices[0, 1], -vertices[0,2], MATRIX_SIZE);
             double[,] fliptest = createFlipMatrix(2, MATRIX_SIZE); // flip over y
-            double[,] test = createMoveMatrix(0,0,0,MATRIX_SIZE); // basic matrix
+            double[,] test = basicMatrix(MATRIX_SIZE); // basic matrix
 
             // testing
             matrixMultiply(test, test, centertest);
@@ -483,6 +484,24 @@ namespace asgn5v1
                 else if (A[x, 1] > max)
                 {
                     max = A[x, 1];
+                }
+            }
+            size = max - min;
+            return size;
+        }
+
+        double sizeofimgZ(double[,] A)
+        {
+            double size, min = double.MaxValue, max = 0;
+            for (int x = 0; x < A.GetLength(0); x++)
+            {
+                if (A[x, 2] < min)
+                {
+                    min = A[x, 2];
+                }
+                else if (A[x, 2] > max)
+                {
+                    max = A[x, 2];
                 }
             }
             size = max - min;
@@ -718,20 +737,10 @@ namespace asgn5v1
                 for (int y = 0; y < n; y++) { mout[x, y] = 0; }
                 mout[x, x] = 1;
             }
-            
-
-            return mout;
-        }
-
-        double[,] cwXRot(double deg, int n)
-        {
-            double[,] mout = new double[n, n];
-            for (int x = 0; x < n; x++)
-            {
-                for (int y = 0; y < n; y++) { mout[x, y] = 0; }
-                mout[x, x] = 1;
-            }
-
+            mout[1,1] = Math.Cos(deg);
+	        mout[1,2] = -Math.Sin(deg);
+	        mout[2,1] = Math.Sin(deg);
+	        mout[2,2] = Math.Cos(deg);
 
             return mout;
         }
@@ -744,20 +753,10 @@ namespace asgn5v1
                 for (int y = 0; y < n; y++) { mout[x, y] = 0; }
                 mout[x, x] = 1;
             }
-
-
-            return mout;
-        }
-
-        double[,] cwYRot(double deg, int n)
-        {
-            double[,] mout = new double[n, n];
-            for (int x = 0; x < n; x++)
-            {
-                for (int y = 0; y < n; y++) { mout[x, y] = 0; }
-                mout[x, x] = 1;
-            }
-
+            mout[0,0] = Math.Cos(deg);
+	        mout[0,2] = Math.Sin(deg);
+	        mout[2,0] = -Math.Sin(deg);
+	        mout[2,2] = Math.Cos(deg);
 
             return mout;
         }
@@ -770,20 +769,10 @@ namespace asgn5v1
                 for (int y = 0; y < n; y++) { mout[x, y] = 0; }
                 mout[x, x] = 1;
             }
-
-
-            return mout;
-        }
-
-        double[,] cwZRot(double deg, int n)
-        {
-            double[,] mout = new double[n, n];
-            for (int x = 0; x < n; x++)
-            {
-                for (int y = 0; y < n; y++) { mout[x, y] = 0; }
-                mout[x, x] = 1;
-            }
-
+            mout[0,0] = Math.Cos(deg);
+	        mout[0,1] = -Math.Sin(deg);
+	        mout[1,0] = Math.Sin(deg);
+	        mout[1,1] = Math.Cos(deg);
 
             return mout;
         }
@@ -853,10 +842,9 @@ namespace asgn5v1
                 // scale up by 10% (110%)
                 // gotta move around son
                 // Not scaling from the center position
-                double mx = (ClientSize.Width / 2), my = (ClientSize.Height / 2);
                 double[,] scale = createScaleMatrix(1.1, 1.1, 1.1, MATRIX_SIZE);
-                double[,] centertest = createMoveMatrix(-scrnpts[0, 0], -scrnpts[0, 1], 0, MATRIX_SIZE);
-                double[,] ocentertest = createMoveMatrix(scrnpts[0, 0], scrnpts[0, 1], 0, MATRIX_SIZE);
+                double[,] centertest = createMoveMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2], MATRIX_SIZE);
+                double[,] ocentertest = createMoveMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2], MATRIX_SIZE);
                 double[,] test = createMoveMatrix(0, 0, 0, MATRIX_SIZE); // basic matrix
 
                 // testing
@@ -868,10 +856,9 @@ namespace asgn5v1
 			}
 			if (e.Button == scaledownbtn) 
 			{
-                double mx = (ClientSize.Width / 2), my = (ClientSize.Height / 2);
                 double[,] scale = createScaleMatrix(0.9, 0.9, 0.9, MATRIX_SIZE);
-                double[,] centertest = createMoveMatrix(-scrnpts[0, 0], -scrnpts[0, 1], 0, MATRIX_SIZE);
-                double[,] ocentertest = createMoveMatrix(scrnpts[0, 0], scrnpts[0, 1], 0, MATRIX_SIZE);
+                double[,] centertest = createMoveMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2], MATRIX_SIZE);
+                double[,] ocentertest = createMoveMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2], MATRIX_SIZE);
                 double[,] test = createMoveMatrix(0, 0, 0, MATRIX_SIZE); // basic matrix
 
                 // testing
@@ -883,15 +870,42 @@ namespace asgn5v1
 			}
 			if (e.Button == rotxby1btn) 
 			{
-				
+                double[,] centertest = createMoveMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2], MATRIX_SIZE);
+                double[,] ocentertest = createMoveMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2], MATRIX_SIZE);
+                double[,] test = basicMatrix(MATRIX_SIZE); // basic matrix
+                double[,] rot = ccwXRot(0.05, MATRIX_SIZE);
+
+                matrixMultiply(test, test, centertest);
+                matrixMultiply(test, test, rot);
+                matrixMultiply(test, test, ocentertest);
+                matrixMultiply(ctrans, ctrans, test);
+                Refresh();
 			}
 			if (e.Button == rotyby1btn) 
 			{
-				
+                double[,] centertest = createMoveMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2], MATRIX_SIZE);
+                double[,] ocentertest = createMoveMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2], MATRIX_SIZE);
+                double[,] test = basicMatrix(MATRIX_SIZE); // basic matrix
+                double[,] rot = ccwYRot(0.05, MATRIX_SIZE);
+
+                matrixMultiply(test, test, centertest);
+                matrixMultiply(test, test, rot);
+                matrixMultiply(test, test, ocentertest);
+                matrixMultiply(ctrans, ctrans, test);
+                Refresh();
 			}
 			if (e.Button == rotzby1btn) 
 			{
-				
+                double[,] centertest = createMoveMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2], MATRIX_SIZE);
+                double[,] ocentertest = createMoveMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2], MATRIX_SIZE);
+                double[,] test = basicMatrix(MATRIX_SIZE); // basic matrix
+                double[,] rot = ccwZRot(0.05, MATRIX_SIZE);
+
+                matrixMultiply(test, test, centertest);
+                matrixMultiply(test, test, rot);
+                matrixMultiply(test, test, ocentertest);
+                matrixMultiply(ctrans, ctrans, test);
+                Refresh();
 			}
 
 			if (e.Button == rotxbtn) 
