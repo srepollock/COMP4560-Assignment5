@@ -15,6 +15,7 @@ namespace asgn5v1
     public class Transformer : System.Windows.Forms.Form
 	{
         const int MATRIX_SIZE = 4;
+        double[,] orgPoint;
         private System.ComponentModel.IContainer components;
 		//private bool GetNewData();
 
@@ -26,6 +27,9 @@ namespace asgn5v1
 		double[,] vertices;
 		double[,] scrnpts; // result of verticies * ctrans
 		double[,] ctrans = new double[4,4];  //your main transformation matrix
+        private System.Windows.Forms.Timer xticker = new System.Windows.Forms.Timer();
+        private System.Windows.Forms.Timer yticker = new System.Windows.Forms.Timer();
+        private System.Windows.Forms.Timer zticker = new System.Windows.Forms.Timer();
 		private System.Windows.Forms.ImageList tbimages;
 		private System.Windows.Forms.ToolBar toolBar1;
 		private System.Windows.Forms.ToolBarButton transleftbtn;
@@ -78,7 +82,13 @@ namespace asgn5v1
 				new EventHandler(MenuAboutOnClick));
 			Menu = new MainMenu(new MenuItem[] {miFile, miAbout});
 
-			
+            xticker.Interval = 10;
+            yticker.Interval = 10;
+            zticker.Interval = 10;
+            xticker.Tick += new System.EventHandler(contXRotate);
+            yticker.Tick += new System.EventHandler(contYRotate);
+            zticker.Tick += new System.EventHandler(contZRotate);
+            
 		}
 
 		/// <summary>
@@ -436,77 +446,27 @@ namespace asgn5v1
 			}
 			scrnpts = new double[numpts,4];
 			setIdentity(ctrans,4,4);  //initialize transformation matrix to identity
-            double imgX = sizeofimgX(vertices), imgY = sizeofimgY(vertices), imgZ = sizeofimgZ(vertices);
-            double sx = (ClientSize.Height / imgX) / 2, sy = (ClientSize.Height / imgY) / 2, sz = (ClientSize.Height / imgZ) / 2,
+            double imgX = sizeofimgX(vertices);
+            double sx = (ClientSize.Height / imgX) / 2, sy = (ClientSize.Height / imgX) / 2, sz = (ClientSize.Height / imgX) / 2,
                 mx = (ClientSize.Width / 2), my = (ClientSize.Height / 2), mz = (ClientSize.Height / 2);
 
             double[,] scaletest = createScaleMatrix(sx, sy, sz);
             double[,] movetest = createMoveMatrix(mx, my, mz);
             double[,] centertest = createMoveMatrix(-vertices[0, 0], -vertices[0, 1], -vertices[0,2]);
             double[,] fliptest = createFlipMatrix(); // flip over y
-            double[,] test = basicMatrix(); // basic matrix
 
             // testing
-            matrixMultiply(test, test, centertest);
-            matrixMultiply(test, test, fliptest);
-            matrixMultiply(test, test, scaletest);
-            matrixMultiply(ctrans, test, movetest);
+            ctrans = matrixMultiply(ctrans, centertest);
+            ctrans = matrixMultiply(ctrans, fliptest);
+            ctrans = matrixMultiply(ctrans, scaletest);
+            ctrans = matrixMultiply(ctrans, movetest);
+
+            orgPoint = ctrans;
+
+            stopAllTickers();
 
             return true;
 		} // end of GetNewData
-
-        double sizeofimgX(double[,] A){
-            double size, min = double.MaxValue, max = 0;
-            for (int x = 0; x < A.GetLength(0); x++)
-            {
-                if (A[x, 0] < min)
-                {
-                    min = A[x, 0];
-                }
-                else if (A[x, 0] > max)
-                {
-                    max = A[x, 0];
-                }
-            }
-            size = max - min;
-            return size;
-        }
-
-        double sizeofimgY(double[,] A)
-        {
-            double size, min = double.MaxValue, max = 0;
-            for (int x = 0; x < A.GetLength(0); x++)
-            {
-                if (A[x, 1] < min)
-                {
-                    min = A[x, 1];
-                }
-                else if (A[x, 1] > max)
-                {
-                    max = A[x, 1];
-                }
-            }
-            size = max - min;
-            return size;
-        }
-
-        double sizeofimgZ(double[,] A)
-        {
-            double size, min = double.MaxValue, max = 0;
-            for (int x = 0; x < A.GetLength(0); x++)
-            {
-                if (A[x, 2] < min)
-                {
-                    min = A[x, 2];
-                }
-                else if (A[x, 2] > max)
-                {
-                    max = A[x, 2];
-                }
-            }
-            size = max - min;
-            return size;
-        }
 
 		void DecodeCoords(ArrayList coorddata)
 		{
@@ -555,6 +515,29 @@ namespace asgn5v1
 		}// end of setIdentity
 
         /// <summary>
+        /// Gets the size of the image y.
+        /// </summary>
+        /// <param name="A">Verticies matrix</param>
+        /// <returns>Size of the image.</returns>
+        double sizeofimgX(double[,] A)
+        {
+            double size, min = double.MaxValue, max = 0;
+            for (int x = 0; x < A.GetLength(0); x++)
+            {
+                if (A[x, 0] < min)
+                {
+                    min = A[x, 0];
+                }
+                else if (A[x, 0] > max)
+                {
+                    max = A[x, 0];
+                }
+            }
+            size = Math.Abs(max) - Math.Abs(min);
+            return size;
+        }
+
+        /// <summary>
         /// Create a basic matrix.
         /// </summary>
         /// <returns>Basic matrix</returns>
@@ -574,7 +557,7 @@ namespace asgn5v1
         /// </summary>
         /// <param name="xSc">Scale x by</param>
         /// <param name="ySc">Scale y by</param>
-        /// <param name="n">Size of matrix</param>
+        /// <param name="zSc">Scale z by</param>
         /// <returns>n*n matrix</returns>
         double[,] createScaleMatrix(double xSc, double ySc, double zSc)
         {
@@ -671,6 +654,81 @@ namespace asgn5v1
             return mout;
         }
 
+        /// <summary>
+        /// Rotate about x.
+        /// </summary>
+        void xRotate()
+        {
+            double[,] centertest = createMoveMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2]);
+            double[,] ocentertest = createMoveMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2]);
+            double[,] rot = ccwXRot(0.05);
+
+            ctrans = matrixMultiply(ctrans, centertest);
+            ctrans = matrixMultiply(ctrans, rot);
+            ctrans = matrixMultiply(ctrans, ocentertest);
+            Refresh();
+        }
+
+        /// <summary>
+        /// Rotate about y.
+        /// </summary>
+        void yRotate()
+        {
+            double[,] centertest = createMoveMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2]);
+            double[,] ocentertest = createMoveMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2]);
+            double[,] rot = ccwYRot(0.05);
+
+            ctrans = matrixMultiply(ctrans, centertest);
+            ctrans = matrixMultiply(ctrans, rot);
+            ctrans = matrixMultiply(ctrans, ocentertest);
+            Refresh();
+        }
+
+        /// <summary>
+        /// Rotate about z.
+        /// </summary>
+        void zRotate()
+        {
+            double[,] centertest = createMoveMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2]);
+            double[,] ocentertest = createMoveMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2]);
+            double[,] rot = ccwZRot(0.05);
+
+            ctrans = matrixMultiply(ctrans, centertest);
+            ctrans = matrixMultiply(ctrans, rot);
+            ctrans = matrixMultiply(ctrans, ocentertest);
+            Refresh();
+        }
+
+        /// <summary>
+        /// Function for continuous rotation, calls xRotate.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        void contXRotate(Object sender, EventArgs e)
+        {
+            xRotate();
+        }
+
+        /// <summary>
+        /// Function for continuous rotation, calls yRotate.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        void contYRotate(Object sender, EventArgs e)
+        {
+            yRotate();
+        }
+
+        /// <summary>
+        /// Function for continuous rotation, calls zRotate.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        void contZRotate(Object sender, EventArgs e)
+        {
+            zRotate();
+        }
+
 		/// <summary>
 		/// Shears the character in the x direction with respect to y.
 		/// </summary>
@@ -705,6 +763,38 @@ namespace asgn5v1
             }
         }
 
+        /// <summary>
+        /// Multiplies two matricies.
+        /// </summary>
+        /// <param name="m1">Matrix 1</param>
+        /// <param name="m2">Matrix 2</param>
+        /// <returns>Product</returns>
+        double[,] matrixMultiply(double[,] m1, double[,] m2)
+        {
+            double temp = 0;
+            double[,] mout = new double[4,4];
+            for (int x = 0; x < 4; x++)
+            {
+                for (int y = 0; y < 4; y++)
+                {
+                    temp = 0;
+                    for (int i = 0; i < 4; i++)
+                    {
+                        temp += m1[x, i] * m2[i, y];
+                    }
+                    mout[x, y] = temp;
+                }
+            }
+            return mout;
+        }
+
+        private void stopAllTickers()
+        {
+            xticker.Stop();
+            yticker.Stop();
+            zticker.Stop();
+        }
+
 		private void Transformer_Load(object sender, System.EventArgs e)
 		{
 			
@@ -715,6 +805,7 @@ namespace asgn5v1
             // Work with ctrans each time
 			if (e.Button == transleftbtn)
 			{
+                stopAllTickers();
                 // move left
                 double[,] move = createMoveMatrix(-75, 0, 0);
                 matrixMultiply(ctrans, ctrans, move);
@@ -722,6 +813,7 @@ namespace asgn5v1
 			}
 			if (e.Button == transrightbtn) 
 			{
+                stopAllTickers();
                 // move right
                 double[,] move = createMoveMatrix(75, 0, 0);
                 matrixMultiply(ctrans, ctrans, move);
@@ -729,6 +821,7 @@ namespace asgn5v1
 			}
 			if (e.Button == transupbtn)
 			{
+                stopAllTickers();
                 // move up
                 double[,] move = createMoveMatrix(0, -35, 0);
                 matrixMultiply(ctrans, ctrans, move);
@@ -737,6 +830,7 @@ namespace asgn5v1
 			
 			if(e.Button == transdownbtn)
 			{
+                stopAllTickers();
                 // move down
                 double[,] move = createMoveMatrix(0, 35, 0);
                 matrixMultiply(ctrans, ctrans, move);
@@ -744,6 +838,7 @@ namespace asgn5v1
 			}
 			if (e.Button == scaleupbtn) 
 			{
+                stopAllTickers();
                 // scale up by 10% (110%)
                 // gotta move around son
                 // Not scaling from the center position
@@ -753,110 +848,93 @@ namespace asgn5v1
                 double[,] test = createMoveMatrix(0, 0, 0); // basic matrix
 
                 // testing
-                matrixMultiply(test, test, centertest);
-                matrixMultiply(test, test, scale);
-                matrixMultiply(test, test, ocentertest);
-                matrixMultiply(ctrans, ctrans, test);
+                ctrans = matrixMultiply(ctrans, centertest);
+                ctrans = matrixMultiply(ctrans, scale);
+                ctrans = matrixMultiply(ctrans, ocentertest);
                 Refresh();
 			}
 			if (e.Button == scaledownbtn) 
 			{
+                stopAllTickers();
                 double[,] scale = createScaleMatrix(0.9, 0.9, 0.9);
                 double[,] centertest = createMoveMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2]);
                 double[,] ocentertest = createMoveMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2]);
                 double[,] test = createMoveMatrix(0, 0, 0); // basic matrix
 
                 // testing
-                matrixMultiply(test, test, centertest);
-                matrixMultiply(test, test, scale);
-                matrixMultiply(test, test, ocentertest);
-                matrixMultiply(ctrans, ctrans, test);
+                ctrans = matrixMultiply(ctrans, centertest);
+                ctrans = matrixMultiply(ctrans, scale);
+                ctrans = matrixMultiply(ctrans, ocentertest);
                 Refresh();
 			}
 			if (e.Button == rotxby1btn) 
 			{
-                double[,] centertest = createMoveMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2]);
-                double[,] ocentertest = createMoveMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2]);
-                double[,] test = basicMatrix(); // basic matrix
-                double[,] rot = ccwXRot(0.05);
-
-                matrixMultiply(test, test, centertest);
-                matrixMultiply(test, test, rot);
-                matrixMultiply(test, test, ocentertest);
-                matrixMultiply(ctrans, ctrans, test);
-                Refresh();
+                stopAllTickers();
+                xRotate();
 			}
 			if (e.Button == rotyby1btn) 
 			{
-                double[,] centertest = createMoveMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2]);
-                double[,] ocentertest = createMoveMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2]);
-                double[,] test = basicMatrix(); // basic matrix
-                double[,] rot = ccwYRot(0.05);
-
-                matrixMultiply(test, test, centertest);
-                matrixMultiply(test, test, rot);
-                matrixMultiply(test, test, ocentertest);
-                matrixMultiply(ctrans, ctrans, test);
-                Refresh();
+                stopAllTickers();
+                yRotate();
 			}
 			if (e.Button == rotzby1btn) 
 			{
-                double[,] centertest = createMoveMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2]);
-                double[,] ocentertest = createMoveMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2]);
-                double[,] test = basicMatrix(); // basic matrix
-                double[,] rot = ccwZRot(0.05);
-
-                matrixMultiply(test, test, centertest);
-                matrixMultiply(test, test, rot);
-                matrixMultiply(test, test, ocentertest);
-                matrixMultiply(ctrans, ctrans, test);
-                Refresh();
+                stopAllTickers();
+                zRotate();
 			}
 
 			if (e.Button == rotxbtn) 
 			{
 				// timer
+                stopAllTickers();
+                xticker.Start();
 			}
 			if (e.Button == rotybtn) 
 			{
                 // timer
+                stopAllTickers();
+                yticker.Start();
             }
 
             if (e.Button == rotzbtn) 
 			{
                 // timer
+                stopAllTickers();
+                zticker.Start();
             }
 
             if (e.Button == shearleftbtn)
 			{
+                stopAllTickers();
 				double[,] move = createMoveMatrix (-ctrans [3, 0], -ctrans [3, 1], -ctrans [3, 2]);
 				double[,] shear = createShearMatrix (0.1); // -10%
 				double[,] omove = createMoveMatrix (ctrans [3, 0], ctrans [3, 1], ctrans [3, 2]);
 				double[,] tnet = basicMatrix ();
 
-				matrixMultiply(tnet, tnet, move);
-				matrixMultiply(tnet, tnet, shear);
-				matrixMultiply(tnet, tnet, omove);
-				matrixMultiply(ctrans, ctrans, tnet);
+                ctrans = matrixMultiply(ctrans, move);
+                ctrans = matrixMultiply(ctrans, shear);
+                ctrans = matrixMultiply(ctrans, omove);
 				Refresh();
 			}
 
 			if (e.Button == shearrightbtn) 
 			{
+                stopAllTickers();
 				double[,] move = createMoveMatrix (-ctrans [3, 0], -ctrans [3, 1], -ctrans [3, 2]);
 				double[,] shear = createShearMatrix (-0.1); // -10%
 				double[,] omove = createMoveMatrix (ctrans [3, 0], ctrans [3, 1], ctrans [3, 2]);
 				double[,] tnet = basicMatrix ();
 
-				matrixMultiply(tnet, tnet, move);
-				matrixMultiply(tnet, tnet, shear);
-				matrixMultiply(tnet, tnet, omove);
-				matrixMultiply(ctrans, ctrans, tnet);
+                ctrans = matrixMultiply(ctrans, move);
+                ctrans = matrixMultiply(ctrans, shear);
+                ctrans = matrixMultiply(ctrans, omove);
 				Refresh ();
 			}
 
 			if (e.Button == resetbtn)
 			{
+                stopAllTickers();
+                ctrans = orgPoint;
 				RestoreInitialImage();
 			}
 
