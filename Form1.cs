@@ -440,11 +440,11 @@ namespace asgn5v1
             double sx = (ClientSize.Height / imgX) / 2, sy = (ClientSize.Height / imgY) / 2, sz = (ClientSize.Height / imgZ) / 2,
                 mx = (ClientSize.Width / 2), my = (ClientSize.Height / 2), mz = (ClientSize.Height / 2);
 
-            double[,] scaletest = createScaleMatrix(sx, sy, sz, MATRIX_SIZE);
-            double[,] movetest = createMoveMatrix(mx, my, mz, MATRIX_SIZE);
-            double[,] centertest = createMoveMatrix(-vertices[0, 0], -vertices[0, 1], -vertices[0,2], MATRIX_SIZE);
-            double[,] fliptest = createFlipMatrix(2, MATRIX_SIZE); // flip over y
-            double[,] test = basicMatrix(MATRIX_SIZE); // basic matrix
+            double[,] scaletest = createScaleMatrix(sx, sy, sz);
+            double[,] movetest = createMoveMatrix(mx, my, mz);
+            double[,] centertest = createMoveMatrix(-vertices[0, 0], -vertices[0, 1], -vertices[0,2]);
+            double[,] fliptest = createFlipMatrix(); // flip over y
+            double[,] test = basicMatrix(); // basic matrix
 
             // testing
             matrixMultiply(test, test, centertest);
@@ -544,7 +544,7 @@ namespace asgn5v1
 		} // end of DecodeLines
 
         // setup c trans, where we start from
-		void setIdentity(double[,] A,int nrow,int ncol)
+		void setIdentity(double[,] A, int nrow, int ncol)
 		{
             // flip over the x
 			for (int i = 0; i < nrow;i++) 
@@ -552,110 +552,21 @@ namespace asgn5v1
 				for (int j = 0; j < ncol; j++) A[i,j] = 0.0d;
 				A[i,i] = 1.0d;
 			}
-            // scale vertial by 1/2 height, scale horz by 1/2 width
-
-            // double check that this is working on the lab computers
-
-            //positionX(A, (ClientSize.Height / 2)); // the numbers are being set wayyy too big
-            //positionY(ref A, -1); // flip over y
-            // get the screen height and width, and divide over 2
-            //scaleX(A, (( vertices[0,0] * ((Screen.PrimaryScreen.WorkingArea.Height / 2) / 20)) + (Screen.PrimaryScreen.WorkingArea.Height / 2))); // move in x
-            //scaleY(A, (( vertices[0,1] * ((Screen.PrimaryScreen.WorkingArea.Height / 2) / 20)) + (Screen.PrimaryScreen.WorkingArea.Height / 2))); // move in y
-
-            //scaleX(A, ((Screen.PrimaryScreen.WorkingArea.Height / 2) * vertices[0, 0]) + (Screen.PrimaryScreen.WorkingArea.Height / 2));
-            //scaleY(A, (-(Screen.PrimaryScreen.WorkingArea.Height / 2) * vertices[0, 1]) + (Screen.PrimaryScreen.WorkingArea.Height / 2));
-
 		}// end of setIdentity
 
         /// <summary>
         /// Create a basic matrix.
         /// </summary>
-        /// <param name="n">Size of matrix</param>
         /// <returns>Basic matrix</returns>
-        double[,] basicMatrix(int n)
+        double[,] basicMatrix()
         {
-            double[,] mout = new double[n, n];
-            for (int x = 0; x < n; x++)
+            double[,] mout = new double[MATRIX_SIZE, MATRIX_SIZE];
+            for (int x = 0; x < MATRIX_SIZE; x++)
             {
-                for (int y = 0; y < n; y++) { mout[x, y] = 0; }
+                for (int y = 0; y < MATRIX_SIZE; y++) { mout[x, y] = 0; }
                 mout[x, x] = 1;
             }
             return mout;
-        }
-
-        /// <summary>
-        /// Scales A[x,,] matrix by
-        /// </summary>
-        /// <param name="A">Matrix</param>
-        /// <param name="scaleBy">Scale x by</param>
-        void scaleX(double[,] A, double scaleXBy)
-        {
-            A[0, 0] = scaleXBy;
-        }
-
-        /// <summary>
-        /// Scales A[,y,] matrix by mutliplying scaleBy.
-        /// </summary>
-        /// <param name="A">Matrix</param>
-        /// <param name="scaleBy">Scale Y by</param>
-        void scaleY(double[,] A, double scaleYBy)
-        {
-            A[1, 1] = scaleYBy;
-        }
-
-        /// <summary>
-        /// Scales A[,,z] matrix by mutliplying scaleBy.
-        /// </summary>
-        /// <param name="A">Matrix</param>
-        /// <param name="scaleBy">Scale Z by</param>
-        void scaleZ(double[,] A, double scaleZBy)
-        {
-            A[2, 2] = scaleZBy;
-        }
-
-        /// <summary>
-        /// Moves the x point by position.
-        /// </summary>
-        /// <param name="A">Matrix</param>
-        /// <param name="position">position</param>
-        void moveX(double[,] A, double position)
-        {
-            A[3, 0] = position;
-        }
-
-        /// <summary>
-        /// Moves the y point by position
-        /// </summary>
-        /// <param name="A">Matrix</param>
-        /// <param name="position">position</param>
-        void moveY(double[,] A, double position)
-        {
-            A[3, 1] = position;
-        }
-
-        /// <summary>
-        /// Moves the z point by position
-        /// </summary>
-        /// <param name="A">Matrix</param>
-        /// <param name="position">position</param>
-        void moveZ(double[,] A, double position)
-        {
-            A[3, 2] = position;
-        }
-
-        void flipX(double[,] A)
-        {
-            A[0, 0] *= -1;
-        }
-
-        void flipY(double[,] A)
-        {
-            A[1, 1] *= -1;
-        }
-
-        void flipZ(double[,] A)
-        {
-            A[2, 2] *= -1;
         }
 
         /// <summary>
@@ -665,17 +576,12 @@ namespace asgn5v1
         /// <param name="ySc">Scale y by</param>
         /// <param name="n">Size of matrix</param>
         /// <returns>n*n matrix</returns>
-        double[,] createScaleMatrix(double xSc, double ySc, double zSc, int n)
+        double[,] createScaleMatrix(double xSc, double ySc, double zSc)
         {
-            double[,] mout = new double[n,n];
-            for(int x = 0; x < n; x++)
-            {
-                for(int y = 0; y < n; y++) { mout[x, y] = 0; }
-                mout[x, x] = 1;
-            }
-            scaleX(mout, xSc);
-            scaleY(mout, ySc);
-            scaleZ(mout, zSc);
+            double[,] mout = basicMatrix();
+            mout[0,0] = xSc;
+            mout[1,1] = ySc;
+            mout[2,2] = zSc;
             return mout;
         }
 
@@ -684,59 +590,47 @@ namespace asgn5v1
         /// </summary>
         /// <param name="mvx">Move x by</param>
         /// <param name="mvy">Move y by</param>
-        /// <param name="n">Size of the matrix</param>
+        /// <param name="mvz">Move z by</param>
         /// <returns>n*n matrix</returns>
-        double[,] createMoveMatrix(double mvx, double mvy, double mvz, int n)
+        double[,] createMoveMatrix(double mvx, double mvy, double mvz)
         {
-            double[,] mout = new double[n, n];
-            for (int x = 0; x < n; x++)
-            {
-                for (int y = 0; y < n; y++) { mout[x, y] = 0; }
-                mout[x, x] = 1;
-            }
-            moveX(mout, mvx);
-            moveY(mout, mvy);
-            moveZ(mout, mvz);
+            double[,] mout = basicMatrix();
+            mout[3,0] = mvx;
+            mout[3,1] = mvy;
+            mout[3,2] = mvz;
             return mout;
         }
 
         /// <summary>
-        /// 
+        /// Create a flip matrix.
         /// </summary>
-        /// <param name="fx"></param>
-        /// <param name="flipxyz">1 for x, 2 for y, 3 for z</param>
-        /// <param name="n">Size of the matrix</param>
-        /// <returns></returns>
-        double[,] createFlipMatrix(double flipxyz, int n)
+        /// <param name="flipxyz">1 for x, 2 for y, 3 for z. Default y(2)</param>
+        /// <returns>Returns a new flip matrix</returns>
+        double[,] createFlipMatrix(double flipxyz = 2)
         {
-            double[,] mout = new double[n, n];
-            for (int x = 0; x < n; x++)
-            {
-                for (int y = 0; y < n; y++) { mout[x, y] = 0; }
-                mout[x, x] = 1;
-            }
+            double[,] mout = basicMatrix();
             if(flipxyz == 1)
             {
-                flipX(mout);
+                mout[0,0] *= -1;
             }else if(flipxyz == 2)
             {
-                flipY(mout);
+                mout[1,1] *= -1;
             }
             else
             {
-                flipZ(mout);
+                mout[2,2] *= -1;
             }
             return mout;
         }
 
-        double[,] ccwXRot(double deg, int n)
+		/// <summary>
+		/// Ccws X rot.
+		/// </summary>
+		/// <returns>The X rotation</returns>
+		/// <param name="deg">Degree</param>
+        double[,] ccwXRot(double deg)
         {
-            double[,] mout = new double[n, n];
-            for (int x = 0; x < n; x++)
-            {
-                for (int y = 0; y < n; y++) { mout[x, y] = 0; }
-                mout[x, x] = 1;
-            }
+            double[,] mout = basicMatrix();
             mout[1,1] = Math.Cos(deg);
 	        mout[1,2] = -Math.Sin(deg);
 	        mout[2,1] = Math.Sin(deg);
@@ -745,14 +639,14 @@ namespace asgn5v1
             return mout;
         }
 
-        double[,] ccwYRot(double deg, int n)
+		/// <summary>
+		/// Ccws Y rotation
+		/// </summary>
+		/// <returns>The Y rotation</returns>
+		/// <param name="deg">Degtree</param>
+        double[,] ccwYRot(double deg)
         {
-            double[,] mout = new double[n, n];
-            for (int x = 0; x < n; x++)
-            {
-                for (int y = 0; y < n; y++) { mout[x, y] = 0; }
-                mout[x, x] = 1;
-            }
+            double[,] mout = basicMatrix();
             mout[0,0] = Math.Cos(deg);
 	        mout[0,2] = Math.Sin(deg);
 	        mout[2,0] = -Math.Sin(deg);
@@ -761,14 +655,14 @@ namespace asgn5v1
             return mout;
         }
 
-        double[,] ccwZRot(double deg, int n)
+		/// <summary>
+		/// Ccws Z rotation
+		/// </summary>
+		/// <returns>The Z rottation</returns>
+		/// <param name="deg">Degree</param>
+        double[,] ccwZRot(double deg)
         {
-            double[,] mout = new double[n, n];
-            for (int x = 0; x < n; x++)
-            {
-                for (int y = 0; y < n; y++) { mout[x, y] = 0; }
-                mout[x, x] = 1;
-            }
+            double[,] mout = basicMatrix();
             mout[0,0] = Math.Cos(deg);
 	        mout[0,1] = -Math.Sin(deg);
 	        mout[1,0] = Math.Sin(deg);
@@ -776,6 +670,17 @@ namespace asgn5v1
 
             return mout;
         }
+
+		/// <summary>
+		/// Shears the character in the x direction with respect to y.
+		/// </summary>
+		/// <returns>Shear matrix.</returns>
+		/// <param name="perc">Percent of shearing, given as 0.x.</param>
+		double[,] createShearMatrix(double perc){
+			double[,] shear = basicMatrix ();
+			shear [1, 0] = perc;
+			return shear;
+		}
 
         /// <summary>
         /// Multiplies matrix
@@ -811,21 +716,21 @@ namespace asgn5v1
 			if (e.Button == transleftbtn)
 			{
                 // move left
-                double[,] move = createMoveMatrix(-75, 0, 0, MATRIX_SIZE);
+                double[,] move = createMoveMatrix(-75, 0, 0);
                 matrixMultiply(ctrans, ctrans, move);
 				Refresh();
 			}
 			if (e.Button == transrightbtn) 
 			{
                 // move right
-                double[,] move = createMoveMatrix(75, 0, 0, MATRIX_SIZE);
+                double[,] move = createMoveMatrix(75, 0, 0);
                 matrixMultiply(ctrans, ctrans, move);
                 Refresh();
 			}
 			if (e.Button == transupbtn)
 			{
                 // move up
-                double[,] move = createMoveMatrix(0, -35, 0, MATRIX_SIZE);
+                double[,] move = createMoveMatrix(0, -35, 0);
                 matrixMultiply(ctrans, ctrans, move);
                 Refresh();
 			}
@@ -833,7 +738,7 @@ namespace asgn5v1
 			if(e.Button == transdownbtn)
 			{
                 // move down
-                double[,] move = createMoveMatrix(0, 35, 0, MATRIX_SIZE);
+                double[,] move = createMoveMatrix(0, 35, 0);
                 matrixMultiply(ctrans, ctrans, move);
                 Refresh();
 			}
@@ -842,10 +747,10 @@ namespace asgn5v1
                 // scale up by 10% (110%)
                 // gotta move around son
                 // Not scaling from the center position
-                double[,] scale = createScaleMatrix(1.1, 1.1, 1.1, MATRIX_SIZE);
-                double[,] centertest = createMoveMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2], MATRIX_SIZE);
-                double[,] ocentertest = createMoveMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2], MATRIX_SIZE);
-                double[,] test = createMoveMatrix(0, 0, 0, MATRIX_SIZE); // basic matrix
+                double[,] scale = createScaleMatrix(1.1, 1.1, 1.1);
+                double[,] centertest = createMoveMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2]);
+                double[,] ocentertest = createMoveMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2]);
+                double[,] test = createMoveMatrix(0, 0, 0); // basic matrix
 
                 // testing
                 matrixMultiply(test, test, centertest);
@@ -856,10 +761,10 @@ namespace asgn5v1
 			}
 			if (e.Button == scaledownbtn) 
 			{
-                double[,] scale = createScaleMatrix(0.9, 0.9, 0.9, MATRIX_SIZE);
-                double[,] centertest = createMoveMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2], MATRIX_SIZE);
-                double[,] ocentertest = createMoveMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2], MATRIX_SIZE);
-                double[,] test = createMoveMatrix(0, 0, 0, MATRIX_SIZE); // basic matrix
+                double[,] scale = createScaleMatrix(0.9, 0.9, 0.9);
+                double[,] centertest = createMoveMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2]);
+                double[,] ocentertest = createMoveMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2]);
+                double[,] test = createMoveMatrix(0, 0, 0); // basic matrix
 
                 // testing
                 matrixMultiply(test, test, centertest);
@@ -870,10 +775,10 @@ namespace asgn5v1
 			}
 			if (e.Button == rotxby1btn) 
 			{
-                double[,] centertest = createMoveMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2], MATRIX_SIZE);
-                double[,] ocentertest = createMoveMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2], MATRIX_SIZE);
-                double[,] test = basicMatrix(MATRIX_SIZE); // basic matrix
-                double[,] rot = ccwXRot(0.05, MATRIX_SIZE);
+                double[,] centertest = createMoveMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2]);
+                double[,] ocentertest = createMoveMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2]);
+                double[,] test = basicMatrix(); // basic matrix
+                double[,] rot = ccwXRot(0.05);
 
                 matrixMultiply(test, test, centertest);
                 matrixMultiply(test, test, rot);
@@ -883,10 +788,10 @@ namespace asgn5v1
 			}
 			if (e.Button == rotyby1btn) 
 			{
-                double[,] centertest = createMoveMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2], MATRIX_SIZE);
-                double[,] ocentertest = createMoveMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2], MATRIX_SIZE);
-                double[,] test = basicMatrix(MATRIX_SIZE); // basic matrix
-                double[,] rot = ccwYRot(0.05, MATRIX_SIZE);
+                double[,] centertest = createMoveMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2]);
+                double[,] ocentertest = createMoveMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2]);
+                double[,] test = basicMatrix(); // basic matrix
+                double[,] rot = ccwYRot(0.05);
 
                 matrixMultiply(test, test, centertest);
                 matrixMultiply(test, test, rot);
@@ -896,10 +801,10 @@ namespace asgn5v1
 			}
 			if (e.Button == rotzby1btn) 
 			{
-                double[,] centertest = createMoveMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2], MATRIX_SIZE);
-                double[,] ocentertest = createMoveMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2], MATRIX_SIZE);
-                double[,] test = basicMatrix(MATRIX_SIZE); // basic matrix
-                double[,] rot = ccwZRot(0.05, MATRIX_SIZE);
+                double[,] centertest = createMoveMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2]);
+                double[,] ocentertest = createMoveMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2]);
+                double[,] test = basicMatrix(); // basic matrix
+                double[,] rot = ccwZRot(0.05);
 
                 matrixMultiply(test, test, centertest);
                 matrixMultiply(test, test, rot);
@@ -924,12 +829,30 @@ namespace asgn5v1
 
             if (e.Button == shearleftbtn)
 			{
+				double[,] move = createMoveMatrix (-ctrans [3, 0], -ctrans [3, 1], -ctrans [3, 2]);
+				double[,] shear = createShearMatrix (0.1); // -10%
+				double[,] omove = createMoveMatrix (ctrans [3, 0], ctrans [3, 1], ctrans [3, 2]);
+				double[,] tnet = basicMatrix ();
+
+				matrixMultiply(tnet, tnet, move);
+				matrixMultiply(tnet, tnet, shear);
+				matrixMultiply(tnet, tnet, omove);
+				matrixMultiply(ctrans, ctrans, tnet);
 				Refresh();
 			}
 
 			if (e.Button == shearrightbtn) 
 			{
-				Refresh();
+				double[,] move = createMoveMatrix (-ctrans [3, 0], -ctrans [3, 1], -ctrans [3, 2]);
+				double[,] shear = createShearMatrix (-0.1); // -10%
+				double[,] omove = createMoveMatrix (ctrans [3, 0], ctrans [3, 1], ctrans [3, 2]);
+				double[,] tnet = basicMatrix ();
+
+				matrixMultiply(tnet, tnet, move);
+				matrixMultiply(tnet, tnet, shear);
+				matrixMultiply(tnet, tnet, omove);
+				matrixMultiply(ctrans, ctrans, tnet);
+				Refresh ();
 			}
 
 			if (e.Button == resetbtn)
